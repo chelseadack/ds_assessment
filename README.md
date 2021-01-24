@@ -3,16 +3,19 @@
 By analysing the relationship between disease susceptibility and gene expression levels in the common ash tree, it could be possible to identify which genes give rise to tolerance to Chalara ash dieback. This can be achieved by performing differential gene expression analysis of RNA-sequencing data. PCA and t-SNE can be used to help clarify trends and a tree's susceptibility to the disease can be predicted from its gene expression levels using a LDA model.
 
 --------------- REQUIRED PACKAGES ---------------
+
 Some packages are required in order to run this report, these can be installed by running the following code :
+
 #Install bioconductor manager
 chooseCRANmirror(ind=51)
 install.packages("BiocManager")
-# Install DEseq2 package from Bioconductor (required for differential expression analysis)
+#Install DEseq2 package from Bioconductor (required for differential expression analysis)
 BiocManager::install("DESeq2")
-# Instal apeglm package from Bioconductor (required for log fold-change shrinkage)
+#Instal apeglm package from Bioconductor (required for log fold-change shrinkage)
 BiocManager::install("apeglm")
 
 --------------- DATA SETS ---------------
+
 The sample data used in this report consists of RNA-Seq data and trait data - these can be found in the data-raw file. Other data sets can be used providing they are in the same format of :
 
 expression (RNA-Seq) data
