@@ -5,7 +5,7 @@ By analysing the relationship between disease susceptibility and gene expression
 --------------- REQUIRED PACKAGES ---------------
 
 Some packages are required in order to run this report, these can be installed by running the following code :
-
+```{r}
 #Install bioconductor manager
 chooseCRANmirror(ind=51)
 install.packages("BiocManager")
@@ -13,7 +13,7 @@ install.packages("BiocManager")
 BiocManager::install("DESeq2")
 #Instal apeglm package from Bioconductor (required for log fold-change shrinkage)
 BiocManager::install("apeglm")
-
+```
 --------------- DATA SETS ---------------
 
 The sample data used in this report consists of RNA-Seq data and trait data - these can be found in the data-raw file. Other data sets can be used providing they are in the same format of :
