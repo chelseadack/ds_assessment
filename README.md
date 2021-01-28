@@ -14,6 +14,8 @@ BiocManager::install("DESeq2")
 #Instal apeglm package from Bioconductor (required for log fold-change shrinkage)
 BiocManager::install("apeglm")
 ```
+The output of sessionInfo() can be found in [sessioninfo.md]("sessioninfo.md").
+
 --------------- DATA SETS ---------------
 
 The sample data used in this report consists of RNA-Seq data and trait data - these can be found in the data-raw file. Other data sets can be used providing they are in the same format of :

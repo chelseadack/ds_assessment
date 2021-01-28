@@ -206,7 +206,7 @@ pheatmap(assay(ntd)[select, ],
          annotation_col = m_trait)
 ```
 
-It may be useful to remove clustering so that the genes are shown in order of increasing p-value and the trees are shown in ascending order (the same order as the data set). By viewing the results without clustering, as seen in Figure \@ref(fig:unclustered-fig), it may be easier to see which genes are associated with certain traits.
+It may be useful to remove clustering so that the genes are shown in order of increasing p-value and the trees are shown in the same order as the data set. By viewing the results without clustering, as seen in Figure \@ref(fig:unclustered-fig), it may be easier to see which genes are associated with certain traits.
 
 <!-- unclustered heatmap figure legend -->
 (ref:unclustered-fig) Example heatmap where the trees and genes were not clustered. Each row represents a gene and each column represents a tree sampled. Genes are in order of p-value and trees are in the same order as the data set. The trait of each tree is indicated by the light blue and pink squares above the heatmap. The colour of each square indicates the level of gene expression, as shown by the legend. The genes with the lowest p-values (most differentially expressed) are shown.
@@ -248,7 +248,7 @@ expression2 <- data.frame(t(expression)) %>%
   lapply(as.numeric) %>% 
   as.data.frame()
 
-# filter tidied expression data to keep only differentially expressed genes
+# filter tidied expression data to keep only significantly differentially expressed genes
 expression_filtered <- expression2 %>% 
   select(row.names(diff_expressed))
 
@@ -295,13 +295,13 @@ load_pc1 <- load_pca %>%
   row.names()
 ```
 
-In the sample data, the first principal component (PC1) captured `r percent1` of the variation in gene expression between samples and the first six components together captured `r percent6`. The distributions of scores on PC1 for the trees sampled show good separation between those with different disease susceptibilities. However, the groups were difficult to separate based on more than one component, as shown by the pairwise scatter plots of the first six principle components in Figure \@ref(fig:pca-fig) produced using the package GGally [@GGally]. This suggests that since only one component was able to clearly separate the groups, the `r load_pc1` gene (which has the greatest contribution to PC1) is most differentially expressed between the groups and has a significant role in determining whether the tree will be susceptible to Chalara ash dieback.
+In the sample data, the first principal component (PC1) captured `r percent1` of the variation in gene expression between samples and the first six components together captured `r percent6`. The distributions of scores on PC1 for the trees sampled show good separation between those with different disease susceptibilities. However, the groups were difficult to separate based on more than one component, as shown by the pairwise scatter plots of the first six principle components in Figure \@ref(fig:pca-fig) produced using the package GGally [@GGally]. This suggests that since only one component was able to clearly separate the groups, the `r load_pc1` gene (which has the greatest contribution to PC1) may have the greatest role in determining whether the tree will be susceptible or tolerant to Chalara ash dieback.
 
 <!-- Pairwise scatter plot figure legend -->
 (ref:pca-fig) Ash tree samples represented by their first six principal components capturing `r percent6` of the variation in gene expression levels between samples. The leading diagonal shows the distribution of scores on each component and pairwise scatter plots of principal components are shown beneath. Trees susceptible to Chalara ash dieback are coloured red and trees that are tolerant are coloured blue. As seen, only PC1 is able to clearly separate trees with different traits.
 
 ```{r pca-fig, fig.cap="(ref:pca-fig)"}
-# extract the scores into a dataframe with the susceptibility
+# extract the scores into a data frame with the susceptibility
 pca_labelled <- data.frame(pca$x, 
                            susceptibility = expression_filtered$suscept)
 
@@ -318,18 +318,19 @@ pca_labelled %>%
 
 ```{r tsne}
 # perform t-SNE on expression data using the Rtsne() function
-# stochastic method so results will differ each time ran
+# stochastic method so results will differ each time ran, use set.seed()
 # low perplexity due to small sample size
+set.seed(23)
 tsne <- expression_filtered %>%
   select(-suscept) %>% 
   Rtsne(perplexity = 4,
         check_duplicates = FALSE)
 ```
 
-T-Distributed Stochastic Neighbor Embedding (t-SNE) is similar to PCA in that it is a dimension reduction method that allows clearer visualisation of trends in data. Based on the PCA results for the sample data it is suggestive that only one gene is significantly differentially expressed and able to clearly separate the trees of different traits. t-SNE can be performed on the same data and was able to visually confirm that there is a significant difference in expression levels of more than one gene between the groups of trees, as seen in Figure \@ref(fig:tsne-fig).
+T-Distributed Stochastic Neighbour Embedding (t-SNE) is similar to PCA in that it is a dimension reduction method that allows clearer visualisation of trends in data. Based on the PCA results for the sample data it is suggestive that the expression of only one gene is a key determinator of disease susceptibility and was able to clearly separate the trees of different traits. t-SNE can be performed on the same data and was able to visually confirm that there is a significant difference in expression levels of more than one gene between the groups of trees, as seen in Figure \@ref(fig:tsne-fig).
 
 <!-- t-SNE plot figure legend -->
-(ref:tsne-fig) Plot of the first t-SNE dimension against the second. There is a clear separation between ash trees that are susceptible (red) and those that are tolerent (blue) to Chalara ash dieback. This indicates that these genes are significantly differentially expressed and may be responsible for the different traits.
+(ref:tsne-fig) Plot of the first t-SNE dimension against the second. There is a clear separation between ash trees that are susceptible (red) and those that are tolerent (blue) to Chalara ash dieback. This indicates that multiple genes may be responsible for the determination of a tree's trait.
 
 ```{r tsne-fig, fig.cap="(ref:tsne-fig)"}
 # put t-SNE scores in a data frame
@@ -339,6 +340,8 @@ dat <- data.frame(tsne$Y, type = trait$chalara)
 # plot the first t-SNE dimension against the second, coloured by trait
 dat %>% ggplot(aes(x = X1, y = X2, colour = type)) +
   geom_point(size = 2) +
+  xlim(-75, 75) +
+  ylim(-140, 140) +
   theme_bw()
 ```
 
@@ -350,6 +353,7 @@ Linear discriminant analysis (LDA) can determine how well a tree's susceptibilit
 # Split the dataset into training and testing sets using createDataPartition()
 # p is the proportion of rows to sample
 # list = FALSE gives a vector of numbers rather than a one item list
+set.seed(43)
 ids <- createDataPartition(y = expression_filtered$suscept,
                            p = 0.75,
                            list = FALSE)
@@ -404,7 +408,7 @@ Since the sample data only featured two categories of disease susceptibility (su
 A subset of data was used to test the LDA model and the confusionMatrix() function gave an evaluation of the performance of the classification model. The accuracy of the LDA model when predicting a tree's susceptibility to the disease based on its gene expression levels was determined to be `r accuracy_test`.
 
 <!-- LDA plot figure legend -->
-(ref:lda-fig) Plot of first linear discriminant (LD1) scores for each ash tree sampled grouped by their susceptibility to Chalara ash dieback. The gene `r load_ld1` has the highest value in the LD1 so correlates with this dimension. There is a strong separation between trees with different traits.
+(ref:lda-fig) Histogram plot of first linear discriminant (LD1) scores for each ash tree sampled, with their susceptibility to Chalara ash dieback shown as indicated by the legend. The gene `r load_ld1` has the highest value in the LD1 so correlates with this dimension. There is a strong separation between trees with different traits.
 
 ```{r lda-fig, fig.cap="(ref:lda-fig)"}
 # extract the scores from the training set with the susceptibility
@@ -412,10 +416,12 @@ lda_labelled_train <- data.frame(plda_train$x,
                               susceptibility = train$suscept)
 
 # create a plot for the training data
-lda_labelled_train %>% 
-  ggplot(aes(x = susceptibility, y = LD1)) +
-  theme_bw() + 
-  geom_point()
+lda_labelled_train %>%
+  ggplot(aes(x = LD1, fill = susceptibility)) +
+  geom_histogram(binwidth = 0.25) +
+  xlim(-7.5, 7.5) +
+  labs(fill = "") +
+  theme_bw()
 ```
 
 # Word count
@@ -438,5 +444,10 @@ This document: `r wc_main`
 README: `r wc_readme`
 
 **Total: `r wc_main + wc_readme` words** 
+
+```{r session-info}
+file <- "sessioninfo.md"
+writeLines(capture.output(sessionInfo()), file)
+```
 
 # References
