@@ -238,9 +238,9 @@ pheatmap(assay(ntd)[select, ],
 
 # save as png
 pheatmap(assay(ntd)[select, ], 
-         cluster_rows = TRUE, 
+         cluster_rows = FALSE, 
          show_rownames = TRUE,
-         cluster_cols = TRUE,
+         cluster_cols = FALSE,
          annotation_col = m_trait, 
          filename = "figures/heatmap_unclustered.png")
 ```
