@@ -38,7 +38,7 @@ One of the most common native trees to the UK is the common ash tree and it play
 
 By analysing the relationship between disease susceptibility and gene expression levels in the common ash tree, it could be possible to identify which genes give rise to tolerance to Chalara ash dieback and hence contribute to saving the keystone species. This can be achieved by performing differential gene expression analysis of RNA-sequencing data to determine which genes are differentially expressed between trees with different susceptibilities. It is important that this analysis is reproducible due to the large number of trees and genes that need to be analysed in order to create an accurate model for Chalara susceptibility.
 
-In this report, sample RNA-Seq data from common ash trees (*Fraxinus excelsior*) with different levels of susceptibility to Chalara ash dieback will be used to demonstrate how this analysis can be done. R [@R-core] with tidyverse packages [@tidyverse] was used for all analyses and the rmarkdown [@markdown1] and bookdown [@bookdown] packages were used for manuscript preparation.
+In this report, sample RNA-Seq data from common ash trees (*Fraxinus excelsior*) with different levels of susceptibility to Chalara ash dieback will be used to demonstrate how this analysis can be done. R [@R-core] with **`tidyverse`** packages [@tidyverse] was used for all analyses and the **`rmarkdown`** [@markdown1] and **`bookdown`** [@bookdown] packages were used for manuscript preparation.
 
 # Data tidying
 
@@ -48,6 +48,7 @@ expression <- read_table2("data-raw/ash_expression.txt")
 # rows are genes, columns are different ash trees sampled
 
 # rename the columns from "Ash000" to "000"
+# extract column names, remove "Ash", convert to numeric so can use formatC() to format, set column names
 number <- scan("data-raw/ash_expression.txt", what = character(), nlines = 1) %>% 
   str_remove("Ash") %>% 
   as.numeric()
@@ -56,7 +57,7 @@ cols <- formatC(number, width = 3, format = "d", flag = "0")
 
 names(expression) <- cols
 
-# reorder columns in ascending order
+# reorder columns in ascending order, rename first column to "Gene"
 expression <- expression %>% 
   select(sort(names(.))) %>% 
   rename(` NA` = "Gene")
@@ -74,6 +75,7 @@ trait <- read_table2("data-raw/ash_trait.txt")
 # rows are different ash trees sampled, column is disease susceptibility
 
 # rename the tree samples from "Ash000" to "000" & make same ascending order as expression data
+# remove "Ash", convert to numeric, format, create new data frame, rename columns, reorder
 trait <- mutate(trait, tree = str_replace(tree, "Ash", ""))
 
 ash <- trait$tree %>% 
@@ -107,6 +109,7 @@ In both files each tree sampled was entered in the format "Ash000" so in order t
 
 ```{r import-expression}
 # convert tidied expression data to matrix
+# need to set first column as row names first
 m_expression <- read_table2("data-processed/expression.txt") %>%  
   column_to_rownames(var = "Gene") %>% 
   as.matrix()
@@ -117,6 +120,7 @@ m_expression <- read_table2("data-processed/expression.txt") %>%
 m_trait <- read.table("data-processed/trait.txt", header = TRUE, row.names = 1)
 
 # format row names to the same as expression data
+# select row names, convert to numeric, format, rename rows
 rows <- row.names(m_trait) %>% 
   as.numeric %>% 
   fapply("%03d")
@@ -161,18 +165,18 @@ res_lfc_ordered <- res_lfc[order(res_lfc$padj), ]
 # write results to data frame for reference
 write.table(res_lfc_ordered, 
             "data-processed/deseq2_lfc_results.txt", 
-            quote = F, 
+            quote = FALSE, 
             sep = "\t")
 ```
 
-To help identify the most significant genes the Log2 fold-change values need to be "shrunk" to reduce noise, using the function lfcShrink() which requires the package 'apeglm' from BiocManager [@lfc] (Note: this does not change the total number of genes previously identified as being significantly differentially expressed). The output of this was then tidied by ordering the genes by size of their p-value and saved as [deseq2_lfc_results.txt]("data-processed/deseq2_lfc_results.txt).
+To help identify the most significant genes the Log2 fold-change values need to be "shrunk" to reduce noise, using the function **`lfcShrink()`** which requires the package 'apeglm' from BiocManager [@lfc] (Note: this does not change the total number of genes previously identified as being significantly differentially expressed). The output of this was then tidied by ordering the genes by size of their p-value and saved as [deseq2_lfc_results.txt]("data-processed/deseq2_lfc_results.txt).
 
 ## Result visualisation
 
 The DESeq2 results can be plotted as mean normalised counts against log fold-change of the mean expression levels of genes between the groups of trees. However, a more useful presentation of the results is examining the read counts across the tolerant and susceptible trees for genes of interest. For example, the most significantly differentially expressed gene can be selected using the following code : 
 
 ```{r deseq2-plot, include = FALSE}
-# plot results as mean normalised counts against log fold change
+# plot results as mean normalised counts against log fold change of mean expression levels
 plot <- plotMA(res_lfc, ylim = c(-2, 2))
 ```
 
@@ -188,7 +192,7 @@ plotCounts(dds, gene = which.min(res_lfc$padj),
 ntd <- normTransform(dds)
 ```
 
-The DESeq2 results can also be visualised through heatmaps using the function pheatmap() [@pheatmap]. To improve the appearance of these, the function normTransform() must be applied to perform a transformation of log2(n+1) to the DESeq2 results. The results can then be plotted using clustering of the genes and trees to make trends clearer to identify since they will be grouped by similarity in their expression pattern. This can help identify genes which are biological signatures associated with the particular disease. An example of this can be seen in Figure \@ref(fig:clustered-fig) - for the sample data used this appears to be the best way to identify the most differentially expressed genes.
+The DESeq2 results can also be visualised through heatmaps using the function **`pheatmap()`** [@pheatmap]. To improve the appearance of these, the function **`normTransform()`** must be applied to perform a transformation of log2(n+1) to the DESeq2 results. The results can then be plotted using clustering of the genes and trees to make trends clearer to identify since they will be grouped by similarity in their expression pattern. This can help identify genes which are biological signatures associated with the particular disease. An example of this can be seen in Figure \@ref(fig:clustered-fig) - for the sample data used this appears to be the best way to identify the most differentially expressed genes.
 
 <!-- clustered heatmap figure legend -->
 (ref:clustered-fig) Example heatmap where the trees and genes were clustered to help pattern identification. Each row represents a gene and each column represents a single ash tree sampled. The trait of each tree is indicated by the light blue and pink squares above the heatmap. The colour of each square indicates the level of gene expression, as shown by the legend. The genes with the lowest p-values (most differentially expressed) are shown.
@@ -230,7 +234,7 @@ pheatmap(assay(ntd)[select, ],
 
 ```{r deseq2-expressed}
 # filter DESeq2 results to identify genes identified as differentially expressed
-# filter out NA padj values from DESeq results
+# convert to data frame so can filter out NA padj values from DESeq results
 diff_expressed <- res_lfc_ordered %>%
   as.data.frame() %>% 
   filter(!is.na(padj))
@@ -248,15 +252,21 @@ expression2 <- data.frame(t(expression)) %>%
   lapply(as.numeric) %>% 
   as.data.frame()
 
-# filter tidied expression data to keep only significantly differentially expressed genes
+# filter tidied expression data to only keep genes identified as significantly differentially expressed
 expression_filtered <- expression2 %>% 
   select(row.names(diff_expressed))
 
 # add chalara susceptibility to data
 expression_filtered$suscept <- trait$chalara
+
+# write to data frame for reference
+write.table(expression_filtered, 
+            "data-processed/expression_filtered.txt", 
+            quote = FALSE, 
+            row.names = FALSE)
 ```
 
-For further analysis, the data needs to be formatted so each column represents a gene and each row is a tree sampled. The trait of each tree sampled was also added as an extra column. It was useful to filter the data to contain only the genes identified in the DESeq2 analysis as being significantly differentially expressed since these are most likely to show clear trends. 
+For further analysis, the data needs to be formatted so each column represents a gene and each row is a tree sampled. The trait of each tree sampled was also added as an extra column. It was useful to filter the data to contain only the genes identified in the DESeq2 analysis as being significantly differentially expressed since these are most likely to show clear trends. This tidied data was saved as [expression_filtered.txt]("data-processed/expression_filtered.txt).
 
 ## PCA
 
@@ -347,7 +357,7 @@ dat %>% ggplot(aes(x = X1, y = X2, colour = type)) +
 
 ## LDA
 
-Linear discriminant analysis (LDA) can determine how well a tree's susceptibility to the disease can be predicted from its gene expression levels. The data needs to be randomly split into training and test data sets using the dplyr slice() function which filters rows based on their index rather than a match to a condition. This means that 75% of the data can be used to create the model and the remaining 25% can be used to test how generalisable the model is.
+Linear discriminant analysis (LDA) can determine how well a tree's susceptibility to the disease can be predicted from its gene expression levels. The data needs to be randomly split into training and test data sets using the dplyr **`slice()`** function which filters rows based on their index rather than a match to a condition. This means that 75% of the data can be used to create the model and the remaining 25% can be used to test how generalisable the model is.
 
 ```{r lda-data}
 # Split the dataset into training and testing sets using createDataPartition()
@@ -374,11 +384,12 @@ lda <- train %>%
   MASS::lda(grouping = train$suscept)
 
 # View the importance of each variable in each discriminant
+# since there are only two groups in this sample data only one discriminant is generated
 load_lda <- data.frame(lda$scaling) %>% 
   dplyr::select(where(is.numeric)) %>%
   abs()
 
-# find which genes contribute most to each component
+# find which genes contribute most to the component
 load_ld1 <- load_lda %>% 
   filter(LD1 == max(LD1)) %>% 
   row.names()
@@ -405,10 +416,10 @@ accuracy_test <- confusion_test$overall['Accuracy'] %>%
 
 Since the sample data only featured two categories of disease susceptibility (susceptible & tolerant) the LDA was only able to create one linear discriminant (LD1). The separation between trees of different traits is stronger in the LDA than in the PCA, as seen in Figure \@ref(fig:lda-fig). The gene with the highest value for LD1 was `r load_ld1` therefore, this suggests this gene has a large role in determining an ash tree's susceptibility to the disease.
 
-A subset of data was used to test the LDA model and the confusionMatrix() function gave an evaluation of the performance of the classification model. The accuracy of the LDA model when predicting a tree's susceptibility to the disease based on its gene expression levels was determined to be `r accuracy_test`.
+A subset of data was used to test the LDA model and the **`confusionMatrix()`** function gave an evaluation of the performance of the classification model. The accuracy of the LDA model when predicting a tree's susceptibility to the disease based on its gene expression levels was determined to be `r accuracy_test`.
 
 <!-- LDA plot figure legend -->
-(ref:lda-fig) Histogram plot of first linear discriminant (LD1) scores for each ash tree sampled, with their susceptibility to Chalara ash dieback shown as indicated by the legend. The gene `r load_ld1` has the highest value in the LD1 so correlates with this dimension. There is a strong separation between trees with different traits.
+(ref:lda-fig) Histogram plot of first linear discriminant (LD1) scores for each ash tree sampled, with their susceptibility to Chalara ash dieback shown as indicated by the legend. There is a strong separation between trees with different traits. The gene `r load_ld1` has the highest value in the LD1 so correlates with this dimension.
 
 ```{r lda-fig, fig.cap="(ref:lda-fig)"}
 # extract the scores from the training set with the susceptibility
