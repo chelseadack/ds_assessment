@@ -18,7 +18,7 @@ The output of sessionInfo() can be found in [sessioninfo.md]("sessioninfo.md").
 
 --------------- DATA SETS ---------------
 
-The sample data used in this report consists of RNA-Seq data and trait data - these can be found in the data-raw file. Other data sets can be used providing they are in the same format of :
+The sample data used in this report consists of RNA-Seq data and trait data - these can be found in the data_raw folder. Other data sets can be used providing they are in the same format of :
 
 expression (RNA-Seq) data
 - columns named "Ash0" where 0 is the tree number

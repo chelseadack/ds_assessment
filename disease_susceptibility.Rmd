@@ -1,5 +1,6 @@
 ---
 title: "Ash Tree Susceptibility To Chalara Ash Dieback"
+author: "Exam number Y3868110"
 output:
   bookdown::html_document2: default
   bookdown::pdf_document2: default
@@ -43,13 +44,13 @@ In this report, sample RNA-Seq data from common ash trees (*Fraxinus excelsior*)
 # Data tidying
 
 ```{r data-expression}
-expression <- read_table2("data-raw/ash_expression.txt")
+expression <- read_table2("data_raw/ash_expression.txt")
 # 32701 observations of 15 variables
 # rows are genes, columns are different ash trees sampled
 
 # rename the columns from "Ash000" to "000"
 # extract column names, remove "Ash", convert to numeric so can use formatC() to format, set column names
-number <- scan("data-raw/ash_expression.txt", what = character(), nlines = 1) %>% 
+number <- scan("data_raw/ash_expression.txt", what = character(), nlines = 1) %>% 
   str_remove("Ash") %>% 
   as.numeric()
 
@@ -64,13 +65,13 @@ expression <- expression %>%
 
 # save tidied expression data to data frame
 write.table(expression, 
-            "data-processed/expression.txt", 
+            "data_processed/expression.txt", 
             quote = FALSE,
             row.names = FALSE)
 ```
 
 ```{r data-trait}
-trait <- read_table2("data-raw/ash_trait.txt")
+trait <- read_table2("data_raw/ash_trait.txt")
 # 14 observations of 2 variables
 # rows are different ash trees sampled, column is disease susceptibility
 
@@ -90,18 +91,18 @@ trait <- data.frame(ash, trait$condition) %>%
 
 # save tidied trait data to data frame
 write.table(trait, 
-            "data-processed/trait.txt", 
+            "data_processed/trait.txt", 
             quote = FALSE,
             row.names = FALSE)
 ```
 
 The sample data used consisted of two files :
 
-* [ash_expression.txt]("data-raw/ash_expression.txt") containing expression levels of `r nrow(expression)` genes for `r ncol(expression)-1` different ash trees
+* [ash_expression.txt]("data_raw/ash_expression.txt") containing expression levels of `r nrow(expression)` genes for `r ncol(expression)-1` different ash trees
 
-* [ash_trait.txt]("data-raw/ash_trait.txt") containing whether the same trees were tolerant or susceptible to Chalara ash dieback
+* [ash_trait.txt]("data_raw/ash_trait.txt") containing whether the same trees were tolerant or susceptible to Chalara ash dieback
 
-In both files each tree sampled was entered in the format "Ash000" so in order to make the data easier to analyse these labels were renamed to "000". For the expression data this involved renaming the columns and reordering them into ascending order - this tidy data was saved as [expression.txt]("data-processed/expression.txt). For the trait data this involved renaming the rows and reordering them into the same ascending order - this tidy data was saved as [trait.txt]("data-processed/trait.txt). It is essential that the expression data column names are equal to the trait data row names for the differential expression analysis.
+In both files each tree sampled was entered in the format "Ash000" so in order to make the data easier to analyse these labels were renamed to "000". For the expression data this involved renaming the columns and reordering them into ascending order - this tidy data was saved as [expression.txt]("data_processed/expression.txt). For the trait data this involved renaming the rows and reordering them into the same ascending order - this tidy data was saved as [trait.txt]("data_processed/trait.txt). It is essential that the expression data column names are equal to the trait data row names for the differential expression analysis.
 
 # Differential gene expression analysis
 
@@ -110,14 +111,14 @@ In both files each tree sampled was entered in the format "Ash000" so in order t
 ```{r import-expression}
 # convert tidied expression data to matrix
 # need to set first column as row names first
-m_expression <- read_table2("data-processed/expression.txt") %>%  
+m_expression <- read_table2("data_processed/expression.txt") %>%  
   column_to_rownames(var = "Gene") %>% 
   as.matrix()
 ```
 
 ```{r import-trait}
 # read tidied trait data in correct format
-m_trait <- read.table("data-processed/trait.txt", header = TRUE, row.names = 1)
+m_trait <- read.table("data_processed/trait.txt", header = TRUE, row.names = 1)
 
 # format row names to the same as expression data
 # select row names, convert to numeric, format, rename rows
@@ -164,7 +165,7 @@ res_lfc_ordered <- res_lfc[order(res_lfc$padj), ]
 
 # write results to data frame for reference
 write.table(res_lfc_ordered, 
-            "data-processed/deseq2_lfc_results.txt", 
+            "data_processed/deseq2_lfc_results.txt", 
             quote = FALSE, 
             sep = "\t")
 ```
@@ -208,6 +209,14 @@ pheatmap(assay(ntd)[select, ],
          show_rownames = TRUE,
          cluster_cols = TRUE,
          annotation_col = m_trait)
+
+# save as png
+pheatmap(assay(ntd)[select, ], 
+         cluster_rows = TRUE, 
+         show_rownames = TRUE,
+         cluster_cols = TRUE,
+         annotation_col = m_trait, 
+         filename = "figures/heatmap_clustered.png")
 ```
 
 It may be useful to remove clustering so that the genes are shown in order of increasing p-value and the trees are shown in the same order as the data set. By viewing the results without clustering, as seen in Figure \@ref(fig:unclustered-fig), it may be easier to see which genes are associated with certain traits.
@@ -226,6 +235,14 @@ pheatmap(assay(ntd)[select, ],
          show_rownames = TRUE,
          cluster_cols = FALSE,
          annotation_col = m_trait)
+
+# save as png
+pheatmap(assay(ntd)[select, ], 
+         cluster_rows = TRUE, 
+         show_rownames = TRUE,
+         cluster_cols = TRUE,
+         annotation_col = m_trait, 
+         filename = "figures/heatmap_unclustered.png")
 ```
 
 # Further analysis
@@ -261,7 +278,7 @@ expression_filtered$suscept <- trait$chalara
 
 # write to data frame for reference
 write.table(expression_filtered, 
-            "data-processed/expression_filtered.txt", 
+            "data_processed/expression_filtered.txt", 
             quote = FALSE, 
             row.names = FALSE)
 ```
@@ -322,6 +339,9 @@ pca_labelled %>%
           upper = NULL,
           columns = 2:7) + 
   theme_minimal()
+
+# save as png
+ggsave("figures/pca_pairwise.png")
 ```
 
 ## t-SNE
@@ -353,6 +373,9 @@ dat %>% ggplot(aes(x = X1, y = X2, colour = type)) +
   xlim(-75, 75) +
   ylim(-140, 140) +
   theme_bw()
+
+# save as png
+ggsave("figures/tsne.png")
 ```
 
 ## LDA
@@ -433,6 +456,9 @@ lda_labelled_train %>%
   xlim(-7.5, 7.5) +
   labs(fill = "") +
   theme_bw()
+
+# save as png
+ggsave("figures/lda_histogram.png")
 ```
 
 # Word count
